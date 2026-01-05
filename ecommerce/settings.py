@@ -104,6 +104,18 @@ DATABASES = {
 
 
 
+# Custom User MOdel
+AUTH_USER_MODEL = "accounts.CustomUser"
+
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.EmailOrUsernameBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
