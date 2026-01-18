@@ -16,8 +16,22 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+from rest_framework_simplejwt.views import TokenRefreshView
+from accounts.views import CustomTokenObtainPairView
+from dj_rest_auth.views import (
+    PasswordResetView,
+    PasswordResetConfirmView,
+    PasswordChangeView,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/auth/", include('accounts.urls')),
+    path("api/auth/login/", CustomTokenObtainPairView.as_view(), name= "token_obtain"),
+    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/password/reset/", PasswordResetView.as_view(), name="password_reset"),
+    path("api/auth/password/reset/confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
+    path("api/auth/password/change/", PasswordChangeView.as_view(), name="password_change"),
+    path("accounts/", include("allauth.urls")),
 ]

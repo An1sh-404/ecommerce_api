@@ -13,7 +13,7 @@ class MyAccountManager(BaseUserManager):
         user = self.model(
             email = email,
             username = username,
-            **extra_fields,)
+            **extra_fields,) # returns a model instance since objects = MyAccountManager() in CustomUser model so self.model refers to CustomUser
         
         user.set_password(password)
         user.save(using=self._db)

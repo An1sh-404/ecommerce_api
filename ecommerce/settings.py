@@ -11,22 +11,27 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-6&du*a2s3ib4lxxu6l0heuak7vhf1!k&nz$^m_kn&j$1%3+d(9"
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -38,12 +43,19 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+    # Third-party apps
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "allauth",
+    "allauth.socialaccount.providers.google",
     "allauth.account",
     "allauth.socialaccount",
+    "dj_rest_auth",
     "dj_rest_auth.registration",
+    "phonenumber_field",
     # Local apps
     "accounts.apps.AccountsConfig",
 ]
@@ -91,30 +103,109 @@ WSGI_APPLICATION = "ecommerce.wsgi.application"
 
 # PostgreSQL Database Configuration
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE":"django.db.backends.postgresql",
+#         "NAME":os.getenv("POSTGRES_DB"),
+#         "USER":os.getenv("POSTGRES_USER"),
+#         "PASSWORD":os.getenv("POSTGRES_PASSWORD"),
+#         "HOST":os.getenv("DB_HOST"),
+#         "PORT":os.getenv("DB_PORT"),
+#     }
+# }
+
 DATABASES = {
     "default": {
         "ENGINE":"django.db.backends.postgresql",
-        "NAME":os.environ["POSTGRES_DB"],
-        "USER":os.environ["POSTGRES_USER"],
-        "PASSWORD":os.environ["POSTGRES_PASSWORD"],
-        "HOST":os.environ["DB_HOST"],
-        "PORT":os.environ["DB_PORT"],
+        "NAME":"ecommerce",
+        "USER":"an1sh_404",
+        "PASSWORD":"anish@123",
+        "HOST":"localhost",
+        "PORT":"5432",
     }
 }
 
+# Email Backend Configuration
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "noreply@microecommerce.com"
 
+# django-allauth configuration
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+# ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_USERNAME_REQUIRED = True
+# ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = False
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[MicroEcommerce]"
+PASSWORD_RESET_TIMEOUT = 86400
 
 # Custom User MOdel
 AUTH_USER_MODEL = "accounts.CustomUser"
+
+# Django Sites Framework (required for django-allauth)
+SITE_ID = 1
 
 # Authentication Backends
 AUTHENTICATION_BACKENDS = [
     "accounts.backends.EmailOrUsernameBackend",
     "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
+
+# Django default primary key setting
+# https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+# Django REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+}
+
+# SimpleJWT Configuration
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+# OAuth / Socail Auth Configuration
+SOCIALACCOUNT_PROVIDERS = {
+    'google':{
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+
+        },
+        'app' : {
+            'client_id' : os.getenv("GOOGLE_CLIENT_ID", ''),
+            'secret' : os.getenv("GOOGLE_CLIENT_SECRET", ''),
+            'key' : ''
+        }
+    }
+}
+
+# Allauth settings
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create account for OAuth users
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Skip verification for OAuth
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -151,3 +242,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (User uploaded content)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
