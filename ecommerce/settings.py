@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "phonenumber_field",
     # Local apps
     "accounts.apps.AccountsConfig",
+    "products.apps.ProductsConfig",
 ]
 
 MIDDLEWARE = [

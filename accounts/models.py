@@ -1,9 +1,7 @@
 from django.db import models
-import uuid
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
-from datetime import timedelta
 
 from .managers import MyAccountManager 
 
@@ -29,16 +27,3 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
-
-class EmailVerificationToken(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def is_expired(self):
-        expiry_time = self.created_at + timedelta(hours=24)
-        return timezone.now() > expiry_time
-    
-    def  __str__(self):
-        return f"Verification token for {self.user.email}"
