@@ -27,7 +27,7 @@ class CategorySerializer(serializers.ModelSerializer):
         """
         Get immediate child categories
         """
-        subcategories = obj.subcategories.filter(is_active=True)
+        subcategories = obj.subcategories.filter(is_active=True) # returns queryset of categories instances
         return CategorySerializer(subcategories, many=True, context=self.context).data # recursive serialization / .data converts the modeel instance into python primitives/JSON-ready
     
     def get_product_count(self, obj):
@@ -68,11 +68,9 @@ class ProductReviewSerializer(serializers.ModelSerializer):
         Validate rating is between 1 and 5
 
         """
-      
-        def validate_rating(self, value):
-            if not 1 <= value <= 5:
-                raise serializers.ValidationError("Rating must be between 1 and 5")
-            return value
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5")
+        return value
     
     def create(self, validated_data):
         """
@@ -120,7 +118,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         """
         reviews = obj.reviews.filter(is_approved=True)
         if reviews.exists():
-            average = reviews.aggregate(Avg('rating'))['rating__avg']
+            average = reviews.aggregate(Avg('rating'))['rating__avg'] # caluclates aggregate values , must specifies operation such as AVG(),COUNT(), .. to be performed and the field on which operation should be done
+                                                                      # for instance Avg('rating') average of rating field
             return round(average, 1)
         return 0
     
@@ -140,9 +139,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(),
-        source='category',
-        write_only=True
+        queryset=Category.objects.all(), # queryset lists all the category instances to choose from the provided id
+                                         # without this POST, PUT, PATCH would fail
+        source='category', # source maps the model instance to the model filed category in the Product model if not provided would have mapped it to category_id which doesnot exists
+        write_only=True # not shown in reesponse output , accepted in POST/PUT/PATCH
     )
     images = ProductImageSerializer(many=True, read_only=True)
     reviews = ProductReviewSerializer(many=True, read_only=True)
