@@ -4,7 +4,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
-from django.db.models import Q, Avg
+from rest_framework.exceptions import ValidationError
+from rest_framework import serializers
+from django.db.models import Q, Avg, F
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Category, Product, ProductImage, ProductReview
@@ -60,7 +62,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return ProductDetailSerializer
     
     def get_queryset(self):
-        queryset =  super().get_queryset()
+        queryset =  super().get_queryset() # calls self.queryset i.e ProductViewSet.queryset which equals to Product.Objects.filter(is_active=True)
 
         queryset = queryset.select_related('category', 'created_by')
         queryset = queryset.prefetch_related('images', 'reviews')
@@ -110,10 +112,95 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get featured products. Returns upto 10 featured products."""
-        featured_products = self.get_queryset().filter(is_featured=True)
+        featured_products = self.queryset.filter(is_featured=True)[:10]
         serializer = ProductListSerializer(
             featured_products,
             many=True,
             context={'request':request}
         )
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def low_stock(self, request):
+        """Get products with low stock"""
+
+        if not (request.user.is_staff or getattr(request.user, 'is_admin', False)):
+            return Response(
+                {'error': 'Admin access required'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        low_stock_products = Product.objects.filter(
+            stock_quantity__gt=0,
+            stock_quantity__lte=F('low_stock_threshold')
+        )
+
+        serializer = ProductListSerializer(
+            low_stock_products,
+            many=True,
+            context={'request':request}
+        )
+        return Response(serializer.data)
+    
+
+class ProductImageViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing product images"""
+
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    # Allow multipart form data for image uploads
+    parser_classes = [MultiPartParser, FormParser]
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class ProductReviewViewSet(viewsets.ModelViewSet):
+    """Viewset for managing product reviews"""
+
+    queryset = ProductReview.objects.filter(is_approved=True)
+    serializer_class = ProductReviewSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrAdmin]
+
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['rating', 'created_at']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        product_id = self.request.query_params.get('product')
+        if product_id:
+            queryset = queryset.filter(product_id=product_id)
+        
+        rating = self.request.query_params.get('rating')
+        if rating :
+            queryset = queryset.filter(rating=rating)
+
+        return queryset
+    
+    def perform_create(self, serializer):
+        product = serializer.validated_data['product']
+
+        if ProductReview.objects.filter(product=product,user=self.request.user).exists():
+            raise serializers.ValidationError("You have already reviewed this product.")
+        
+        serializer.save(user=self.request.user)
+
+
+@action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+def approve(self, request, pk=None):
+    """Approve a product review (admin only)"""
+
+
+    if not (request.user.is_staff or getattr(request.user, 'is_admin', False)):
+        return Response(
+            {'error': 'Admin access required'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    review = self.get_object()
+    review.is_approved = True
+    review.save()
+    serializer = ProductReviewSerializer(review, context={'request':request})
+    return Response(serializer.data)
