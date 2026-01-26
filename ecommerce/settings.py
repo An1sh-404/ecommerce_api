@@ -56,9 +56,11 @@ INSTALLED_APPS = [
     "dj_rest_auth",
     "dj_rest_auth.registration",
     "phonenumber_field",
+    "django_filters",
     # Local apps
     "accounts.apps.AccountsConfig",
     "products.apps.ProductsConfig",
+    "cart.apps.CartConfig",
 ]
 
 MIDDLEWARE = [

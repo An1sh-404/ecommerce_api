@@ -153,8 +153,8 @@ class ProductImageViewSet(viewsets.ModelViewSet):
     # Allow multipart form data for image uploads
     parser_classes = [MultiPartParser, FormParser]
 
-    def perform_create(self, serializer):
-        serializer.save()
+    # def perform_create(self, serializer):
+    #     serializer.save()
 
 
 class ProductReviewViewSet(viewsets.ModelViewSet):
@@ -187,20 +187,17 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError("You have already reviewed this product.")
         
         serializer.save(user=self.request.user)
-
-
-@action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-def approve(self, request, pk=None):
-    """Approve a product review (admin only)"""
-
-
-    if not (request.user.is_staff or getattr(request.user, 'is_admin', False)):
-        return Response(
-            {'error': 'Admin access required'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    review = self.get_object()
-    review.is_approved = True
-    review.save()
-    serializer = ProductReviewSerializer(review, context={'request':request})
-    return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def approve(self, request, pk=None):
+        """Approve a product review (admin only)"""
+        if not (request.user.is_staff or getattr(request.user, 'is_admin', False)):
+            return Response(
+                {'error': 'Admin access required'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        review = self.get_object()
+        review.is_approved = True
+        review.save()
+        serializer = self.get_serializer(review)
+        return Response(serializer.data)

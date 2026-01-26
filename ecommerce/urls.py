@@ -17,6 +17,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.views import CustomTokenObtainPairView
 from dj_rest_auth.views import (
@@ -34,4 +36,14 @@ urlpatterns = [
     path("api/auth/password/reset/confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
     path("api/auth/password/change/", PasswordChangeView.as_view(), name="password_change"),
     path("accounts/", include("allauth.urls")),
+    
+    # Products API
+    path("api/", include('products.urls')),
+    
+    # Cart API
+    path("api/cart/", include('cart.urls')),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
