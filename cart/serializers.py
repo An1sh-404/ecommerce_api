@@ -130,14 +130,26 @@ class AddToCartSerializer(serializers.Serializer):
             available_to_add = product.stock_quantity - cart_item.quantity
             
             if requested_quantity > product.stock_quantity:
-                cart_item.quantity = product.stock_quantity
-                warning_message = f"Only {available_to_add} more units available. Cart updated to maximum ({product.stock_quantity} total)."
+                if available_to_add > 0:
+                    cart_item.quantity = product.stock_quantity
+                    warning_message = (
+                    f"Only {available_to_add} more unit{'s' if available_to_add != 1 else ''} available. "
+                    f"Cart updated to maximum ({product.stock_quantity} total)."
+                    )
 
+                else:
+
+                    warning_message = (
+                    f"Cart already contains maximum available quantity ({product.stock_quantity} units). "
+                    f"No items added."
+                    )
+            
             else:
                 cart_item.quantity = requested_quantity
-
+            
             cart_item.save()
 
+        
         cart_item.warning = warning_message
         return cart_item    
     
