@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils import get_user_model
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 

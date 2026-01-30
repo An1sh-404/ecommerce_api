@@ -144,6 +144,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         source='category', # source maps the model instance to the model filed category in the Product model if not provided would have mapped it to category_id which doesnot exists
         write_only=True # not shown in reesponse output , accepted in POST/PUT/PATCH
     )
+
+    # category = CategorySerializer is only called for get request
+    # When users create or update i.e for POST, PUT, PATCH requests they provide category_id
+    # Now that category_id , a primarykeyrealtedfield thus validation is done i.e serializer.is_valid() checks if the provided id exists in the Category model, this is why queryset=Category.objects.all() is provided
+    # return validation errors if not found 
+    # if exists then as source='category' maps the provided id to the category field in the Product model, as this is a modelserializer with model=Product
+    # thus when serializer.save() ,  Product.objects.create(**validated_data) i.e Product.objects.create(category=provided_category_instance, ... ) is called
+    # Now in the get request i.e response output serializer = ProductDetailSerializer(product_instance just created or updated through POST/PUT/PATCH)   serializer.data is called
+    # Now category=CategorySerializer(read_only=True) is called to serialize the category field of the product instance as category_instance must be provided , which is done through product_instance.category 
+    
+    # It is to be noted that the field name in the serializer must match the model field name when using source to map to another field
+    # for instance the reason why Product_instance.category is automatically mapped to CategorySerializer is because in the Product model the field name is category
     images = ProductImageSerializer(many=True, read_only=True)
     reviews = ProductReviewSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
