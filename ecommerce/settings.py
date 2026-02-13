@@ -278,7 +278,9 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Additional Security Settings
-CSRF_COOKIE_HTTPONLY = True
+# CSRF_COOKIE_HTTPONLY should be False to allow JavaScript to read the token
+# for AJAX requests while still providing CSRF protection through validation
+CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
