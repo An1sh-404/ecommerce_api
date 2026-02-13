@@ -15,10 +15,11 @@ class EmailVerificationToken:
     @staticmethod
     def create_token(user):
         expiration = timedelta(hours=24)
+        now = timezone.now()
         payload = {
             'user_id': user.id,
-            'exp': timezone.now() + expiration,
-            'iat': timezone.now(),
+            'exp': int((now + expiration).timestamp()),
+            'iat': int(now.timestamp()),
             'type': 'email_verification'
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm = 'HS256')
