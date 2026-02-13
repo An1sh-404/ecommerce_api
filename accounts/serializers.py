@@ -76,7 +76,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 if not user.is_active:
                     raise serializers.ValidationError({
                         "error": "email_not_verified",
-                        "error_description": "Email verification is rquired before logging in.",
+                        "error_description": "Email verification is required before logging in.",
                         "message": "Please verify your email before logging in.",
                         "email": user.email,
                         "actions": {

@@ -29,9 +29,9 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 # Application definition
@@ -121,11 +121,11 @@ WSGI_APPLICATION = "ecommerce.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE":"django.db.backends.postgresql",
-        "NAME":"ecommerce",
-        "USER":"an1sh_404",
-        "PASSWORD":"anish@123",
-        "HOST":"localhost",
-        "PORT":"5432",
+        "NAME":os.getenv("POSTGRES_DB", "ecommerce"),
+        "USER":os.getenv("POSTGRES_USER", "postgres"),
+        "PASSWORD":os.getenv("POSTGRES_PASSWORD"),
+        "HOST":os.getenv("DB_HOST", "localhost"),
+        "PORT":os.getenv("DB_PORT", "5432"),
     }
 }
 
@@ -142,7 +142,6 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 # ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = False
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[MicroEcommerce]"
-PASSWORD_RESET_TIMEOUT = 86400
 
 # Custom User MOdel
 AUTH_USER_MODEL = "accounts.CustomUser"
@@ -256,3 +255,39 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media files (User uploaded content)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Security Settings
+# These should be enabled in production
+if not DEBUG:
+    # HTTPS/SSL Settings
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # HSTS Settings
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Other Security Headers
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # Proxy Header Settings (if using reverse proxy)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Additional Security Settings
+# CSRF_COOKIE_HTTPONLY should be False to allow JavaScript to read the token
+# for AJAX requests while still providing CSRF protection through validation
+CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Account Security Settings
+ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
+ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300  # 5 minutes
+
+# Password Reset Token Timeout (1 day)
+PASSWORD_RESET_TIMEOUT = 86400
